@@ -64,8 +64,14 @@ def resize_images(image_folder='data/images', target_size=(224, 224), method='re
                     image_resized = cv2.resize(image_rgb, target_size)
                     images_list.append(image_resized)
                     logger.info(f"Processed: {image_name}, Resized to: {image_resized.shape[:2]}")
+                # Resize and pad
+                elif method == 'resize_pad':
+                    image_resized_padded = resize_then_pad(image_rgb,target_size)
+                    images_list.append(image_resized_padded)
+                    logger.info(f"Processed: {image_name}, Resized to: {image_resized_padded.shape[:2]}")
+                    if image_resized_padded.shape[:2] != target_size[:2]:
+                        logger.error(f"Dimension don't match: {image_name}, Resized to: {image_resized_padded.shape[:2]}")
 
-                # Padding then resize method can be implemented here if needed
 
 
                 #Resize then pad method
@@ -80,15 +86,58 @@ def resize_images(image_folder='data/images', target_size=(224, 224), method='re
         return None
 
     # Convert to tensor for 'resize', keep as a list for 'same'
-    if method == 'resize':
-        images_numpy = np.array(images_list)
-        images_tensor = torch.from_numpy(images_numpy).permute(0, 3, 1, 2).to(torch.float32) / 255.0
-        logger.info(f"🎯 Final Tensor Shape: {images_tensor.shape}, Dtype: {images_tensor.dtype}")
-        return images_tensor
-
-    return images_list  # Return list of tensors for 'same' method
+    images_numpy = np.array(images_list)
+    images_tensor = torch.from_numpy(images_numpy).permute(0, 3, 1, 2).to(torch.float32) / 255.0
+    logger.info(f"🎯 Final Tensor Shape: {images_tensor.shape}, Dtype: {images_tensor.dtype}")
+    return images_tensor
 
 
+
+
+
+def resize_then_pad(image,target_size=(224, 224)):
+    """
+    Resizes the image while maintaining the aspect ratio, 
+    then pads it to reach the target size.
+
+    Parameters:
+    ----------
+    image : np.ndarray
+        The input image (in RGB format),
+    target_size : tuple, optional
+        The desired output size (width, height), default is (224, 224). Ensure width = height 
+    Returns:
+    -------
+    np.ndarray
+        The resized and padded image.
+    """ 
+    original_height, original_width = image.shape[:2]
+    target_width, target_height = target_size
+
+    # Step 1: Resize while maintaining aspect ratio
+    scale = min(target_width / original_width, target_height / original_height)
+    new_width = int(original_width * scale)
+    new_height = int(original_height * scale)
+    resized_image = cv2.resize(image,(new_width,new_height))
+
+    #Step 2: Calculate padding and pad image
+    delta_w = target_width - new_width
+    delta_h = target_height - new_height
+
+    top = delta_h // 2 
+    bottom = target_height - (top + new_height)
+    left = delta_w//2
+    right = target_width - (left + new_width)
+
+    final_image = cv2.copyMakeBorder(resized_image, top, bottom, left, right, borderType = cv2.BORDER_CONSTANT,value=(0,0,0))
+    return final_image
+
+
+
+
+resize_images(method = 'resize_pad')
+
+    
 
 
 

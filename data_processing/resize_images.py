@@ -64,6 +64,7 @@ def resize_images(image_folder='data/images', target_size=(224, 224), method='re
                     image_resized = cv2.resize(image_rgb, target_size)
                     images_list.append(image_resized)
                     logger.info(f"Processed: {image_name}, Resized to: {image_resized.shape[:2]}")
+
                 # Resize and pad
                 elif method == 'resize_pad':
                     image_resized_padded = resize_then_pad(image_rgb,target_size)
@@ -71,10 +72,13 @@ def resize_images(image_folder='data/images', target_size=(224, 224), method='re
                     logger.info(f"Processed: {image_name}, Resized to: {image_resized_padded.shape[:2]}")
                     if image_resized_padded.shape[:2] != target_size[:2]:
                         logger.error(f"Dimension don't match: {image_name}, Resized to: {image_resized_padded.shape[:2]}")
-
-
-
                 #Resize then pad method
+                elif method == 'pad_resize':
+                    image_padded_resized = pad_then_resize(image_rgb,target_size)
+                    images_list.append(image_padded_resized)
+                    logger.info(f"Processed: {image_name}, Resized to: {image_padded_resized.shape[:2]}")
+                    if image_padded_resized.shape[:2] != target_size[:2]:
+                        logger.error(f"Dimension don't match: {image_name}, Resized to: {image_padded_resized.shape[:2]}")
 
             except Exception as e:
                 logger.warning(f"Failed to process {image_name}: {e}")
@@ -133,12 +137,52 @@ def resize_then_pad(image,target_size=(224, 224)):
     return final_image
 
 
+def pad_then_resize(image, target_size=(224, 224)):
+    """
+    Pads an image to make it square, then resizes it to the specified target size.
+
+    This function first adds padding to the shorter side of the input image to make it square. 
+    The padding is applied equally on both sides (top/bottom or left/right), using a constant color (black by default). 
+    After padding, the square image is resized to the target dimensions.
+
+    Parameters:
+    ----------
+    image : np.ndarray
+        The input image in RGB or BGR format, represented as a NumPy array with shape (height, width, channels).
+    target_size : tuple, optional
+        The desired output size as (width, height). Default is (224, 224).
+
+    Returns:
+    -------
+    final_image : np.ndarray
+        The processed image, resized to the specified target size with padding applied if needed.
+    """
+    original_height, original_width = image.shape[:2]
+
+    # Step 1: Calculate padding to make the image square
+    max_side = max(original_height, original_width)
+
+    delta_w = max_side - original_width
+    delta_h = max_side - original_height
+
+    top = delta_h // 2
+    bottom = delta_h - top
+    left = delta_w // 2
+    right = delta_w - left
+
+    padded_image = cv2.copyMakeBorder(
+        image, 
+        top, bottom, left, right, 
+        borderType=cv2.BORDER_CONSTANT, 
+        value=(0, 0, 0)  
+    )
+
+    # Step 2: Resize the padded image to the target size
+    final_image = cv2.resize(padded_image, target_size)
+    return final_image
 
 
-resize_images(method = 'resize_pad')
-
-    
 
 
 
-
+resize_images(method = 'pad_resize')

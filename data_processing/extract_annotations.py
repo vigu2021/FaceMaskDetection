@@ -8,6 +8,31 @@ logger = logging.getLogger(__name__)
 
 
 def extract_annotations(xml_file = "data/annotations/maksssksksss0.xml"):
+
+    """
+    Extracts image metadata and bounding box annotations from an XML file.
+
+    This function parses XML annotation files (commonly used in object detection datasets like Pascal VOC) 
+    to extract the image size (width, height, depth) and bounding box coordinates for objects in the image.
+
+    Parameters:
+    -----------
+    xml_file : str, optional
+        The path to the XML annotation file. Defaults to "data/annotations/maksssksksss0.xml".
+
+    Returns:
+    --------
+    dict
+        A dictionary containing:
+            - 'image_size': A dictionary with image 'width', 'height', and 'depth'.
+            - 'annotations': A list of dictionaries, where each dictionary contains:
+                - 'label': The object class (e.g., 'with_mask' or 'without_mask').
+                - 'coordinates': A dictionary with bounding box coordinates:
+                    - 'xmin': Minimum x-coordinate of the bounding box.
+                    - 'ymin': Minimum y-coordinate of the bounding box.
+                    - 'xmax': Maximum x-coordinate of the bounding box.
+                    - 'ymax': Maximum y-coordinate of the bounding box.
+    """
     result = {}  # Dictionary to store the extracted data
     tree = ET.parse(xml_file)
     root = tree.getroot() #Grab the root
@@ -68,9 +93,11 @@ def extract_annotations(xml_file = "data/annotations/maksssksksss0.xml"):
     except Exception as e:
         logger.error(f"{xml_file}: Unexpected error occurred - {e}")
 
+
+    # Debug log the final result
+    logger.debug(f"Final Extracted Data: {result}") 
     return result
     
-print(extract_annotations_to_txt())
 
 
     

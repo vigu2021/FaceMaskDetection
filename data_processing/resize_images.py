@@ -185,4 +185,3 @@ def pad_then_resize(image, target_size=(224, 224)):
 
 
 
-resize_images(method = 'pad_resize')

@@ -1,5 +1,5 @@
 import os
-from extract_annotations import extract_annotations 
+from .extract_annotations import extract_annotations 
 import logging 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

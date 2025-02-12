@@ -1,6 +1,6 @@
 import os 
 import logging 
-from convert_to_yolo import convert_to_yolo_format
+from .convert_to_yolo import convert_to_yolo_format
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -53,12 +53,8 @@ def xml_to_yolo(annotation_folder,output_folder):
            
     
 
-# Script to convert xml to yolo format text files
+# Uncomment to create yolo format txt files
 '''
 if __name__ == "__main__":
     xml_to_yolo('data/annotations','data/yolo_format')
 '''
-
-# Check if number of files is the same as in annotations
-
-print(len(os.listdir('data/yolo_format')))

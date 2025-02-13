@@ -12,7 +12,6 @@ class TestYOLOOutput(unittest.TestCase):
             raise FileNotFoundError(f"Required file for testing is missing: {test_file_path}")
         
         yolo_text_output = convert_to_yolo_format(test_file_path)
-        self.assertEqual(5,5)
         
         #Expected output 
         expected_output = [
@@ -45,12 +44,7 @@ class TestYOLOOutput(unittest.TestCase):
         #Test to see if dimensions are (224,224)
         self.assertTrue(image_tensor_resize.shape[1] == 224 and image_tensor_resize.shape[2] == 224)
         self.assertTrue(image_tensor_resize_pad.shape[1] == 224 and image_tensor_resize_pad.shape[2] == 224)
-        self.assertTrue(image_tensor_pad_resize.shape[1] == 214 and image_tensor_pad_resize.shape[2] == 224)
-
-
-
-
-
+        self.assertTrue(image_tensor_pad_resize.shape[1] == 224 and image_tensor_pad_resize.shape[2] == 224)
 
 if __name__ == "__main__":
     unittest.main()

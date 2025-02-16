@@ -3,22 +3,22 @@ import cv2
 import numpy as np
 import torch
 import logging
+from .extract_annotations import extract_annotations  # Import extract_annotations from another file
 
 # Configure logger
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-def resize_images(image_folder='data/images', target_size=(224, 224), method='resize'):
+def resize_image_with_annotations(image_path, xml_path, target_size=(224, 224), method="resize"):
     """
-    Preprocesses images using one of the following methods:
-    - 'resize': Directly resizes the image to the target size (default).
-    - 'pad_resize': Pads the image to a square shape first, then resizes to the target size.
-    - 'resize_pad': Resizes the image while maintaining the aspect ratio, then pads to reach the target size.
+    Resizes both the image and bounding boxes extracted from the annotation file.
 
     Parameters:
     ----------
-    image_folder : str, optional
-        Path to the folder containing images (default is 'data/images').
+    image_path : str
+        Path to the image file.
+    xml_path : str
+        Path to the XML annotation file.
     target_size : tuple, optional
         Desired size for resizing/padding (default is (224, 224)).
     method : str, optional
@@ -26,162 +26,137 @@ def resize_images(image_folder='data/images', target_size=(224, 224), method='re
 
     Returns:
     -------
-    list or torch.Tensor or None
-        - A list of PyTorch tensors (for 'same' method).
-        - A 4D PyTorch tensor (for 'resize', 'pad_resize', or 'resize_pad' methods).
-        - None if no images are processed.
+    tuple (torch.Tensor, dict)
+        - A 3D PyTorch tensor (C, H, W) of the resized image.
+        - A dictionary containing resized bounding boxes.
     """
 
-    if method not in ['resize', 'pad_resize', 'resize_pad']:
-        logger.error(f"Invalid method!: {method}. Please use 'resize', 'pad_resize', or 'resize_pad'.")
-        return None
-    images_list = []
+    if method not in ["resize", "pad_resize", "resize_pad"]:
+        logger.error(f"Invalid method: {method}. Please use 'resize', 'pad_resize', or 'resize_pad'.")
+        return None, None
 
-    # Check if the folder exists
-    if not os.path.exists(image_folder):
-        logger.error(f"The folder does not exist at: {os.path.abspath(image_folder)}")
-        logger.error("Operation stopped! File not found.")
-        return None
+    if not os.path.exists(image_path) or not os.path.exists(xml_path):
+        logger.error(f"Image or XML file not found: {image_path} | {xml_path}")
+        return None, None
 
-    image_files = os.listdir(image_folder)
+    # Extract bounding boxes and original image size from XML
+    annotations = extract_annotations(xml_path)
+    if not annotations:
+        logger.error("Failed to extract annotations.")
+        return None, None
 
-    for image_name in image_files:
-        if image_name.lower().endswith(('.png', '.jpg', '.jpeg')):
-            full_image_path = os.path.join(image_folder, image_name)
+    original_width = annotations["image_size"]["width"]
+    original_height = annotations["image_size"]["height"]
 
-            try:
-                # Read the image using OpenCV
-                image_decoded = cv2.imread(full_image_path)
-                if image_decoded is None:
-                    raise ValueError("Image could not be decoded. Possibly corrupted.")
+    # Read and preprocess the image
+    try:
+        image = cv2.imread(image_path)
+        if image is None:
+            raise ValueError("Image could not be decoded. Possibly corrupted.")
+        
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-                # Convert from BGR to RGB
-                image_rgb = cv2.cvtColor(image_decoded, cv2.COLOR_BGR2RGB)
+        # Apply chosen resizing method
+        if method == "resize":
+            scale_x = target_size[0] / original_width
+            scale_y = target_size[1] / original_height
+            image_resized = cv2.resize(image_rgb, target_size)
+            shift_x = shift_y = 0  # No padding, so no shift
 
-                
-                #Resize method
-                if method == 'resize':
-                    image_resized = cv2.resize(image_rgb, target_size)
-                    images_list.append(image_resized)
-                    logger.info(f"Processed: {image_name}, Resized to: {image_resized.shape[:2]}")
+        elif method == "resize_pad":
+            image_resized, scale_x, scale_y, shift_x, shift_y = resize_then_pad(image_rgb, target_size, original_width, original_height)
 
-                # Resize and pad
-                elif method == 'resize_pad':
-                    image_resized_padded = resize_then_pad(image_rgb,target_size)
-                    images_list.append(image_resized_padded)
-                    logger.info(f"Processed: {image_name}, Resized to: {image_resized_padded.shape[:2]}")
-                    if image_resized_padded.shape[:2] != target_size[:2]:
-                        logger.error(f"Dimension don't match: {image_name}, Resized to: {image_resized_padded.shape[:2]}")
-                #Resize then pad method
-                elif method == 'pad_resize':
-                    image_padded_resized = pad_then_resize(image_rgb,target_size)
-                    images_list.append(image_padded_resized)
-                    logger.info(f"Processed: {image_name}, Resized to: {image_padded_resized.shape[:2]}")
-                    if image_padded_resized.shape[:2] != target_size[:2]:
-                        logger.error(f"Dimension don't match: {image_name}, Resized to: {image_padded_resized.shape[:2]}")
+        elif method == "pad_resize":
+            image_resized, scale_x, scale_y, shift_x, shift_y = pad_then_resize(image_rgb, target_size, original_width, original_height)
 
-            except Exception as e:
-                logger.warning(f"Failed to process {image_name}: {e}")
         else:
-            logger.warning(f"Skipping unsupported file format: {image_name}")
+            logger.error(f"Invalid resizing method: {method}")
+            return None, None
 
-    if not images_list:
-        logger.error("No images were processed successfully.")
-        return None
+        logger.info(f"✅ Processed: {image_path}, New Size: {image_resized.shape[:2]}")
 
-    # Convert to tensor for 'resize', keep as a list for 'same'
-    images_numpy = np.array(images_list)
-    images_tensor = torch.from_numpy(images_numpy).permute(0, 3, 1, 2).to(torch.float32) / 255.0
-    logger.info(f"🎯 Final Tensor Shape: {images_tensor.shape}, Dtype: {images_tensor.dtype}")
-    return images_tensor
+        # Scale and adjust bounding boxes
+        resized_bboxes = []
+        for annotation in annotations["annotations"]:
+            label = annotation["label"]
+
+            # Apply scaling first, then shifting
+            x_min = int(annotation["coordinates"]["xmin"] * scale_x + shift_x)
+            y_min = int(annotation["coordinates"]["ymin"] * scale_y + shift_y)
+            x_max = int(annotation["coordinates"]["xmax"] * scale_x + shift_x)
+            y_max = int(annotation["coordinates"]["ymax"] * scale_y + shift_y)
+
+            logger.info(f"🔄 Adjusted Bounding Box for {label}: {x_min,y_min} to {x_max,y_max}")
+            resized_bboxes.append({
+                "label": label,
+                "coordinates": {"xmin": x_min, "ymin": y_min, "xmax": x_max, "ymax": y_max}
+            })
+
+        # Convert image to tensor
+        image_numpy = np.array(image_resized, dtype=np.float32) / 255.0  # Normalize
+        image_tensor = torch.from_numpy(image_numpy).permute(2, 0, 1)  # Convert (H, W, C) → (C, H, W)
+
+        return image_tensor, {"image_size": target_size, "annotations": resized_bboxes}
+
+    except Exception as e:
+        logger.warning(f"❌ Failed to process {image_path}: {e}")
+        return None, None
 
 
-
-
-
-def resize_then_pad(image,target_size=(224, 224)):
+def resize_then_pad(image, target_size, original_width, original_height):
     """
-    Resizes the image while maintaining the aspect ratio, 
-    then pads it to reach the target size.
-
-    Parameters:
-    ----------
-    image : np.ndarray
-        The input image (in RGB format),
-    target_size : tuple, optional
-        The desired output size (width, height), default is (224, 224). Ensure width = height 
-    Returns:
-    -------
-    np.ndarray
-        The resized and padded image.
-    """ 
-    original_height, original_width = image.shape[:2]
-    target_width, target_height = target_size
-
-    # Step 1: Resize while maintaining aspect ratio
-    scale = min(target_width / original_width, target_height / original_height)
+    Resizes image while maintaining aspect ratio, then pads it.
+    Returns the image, scaling factors, and padding shifts.
+    """
+    scale = min(target_size[0] / original_width, target_size[1] / original_height)
     new_width = int(original_width * scale)
     new_height = int(original_height * scale)
-    resized_image = cv2.resize(image,(new_width,new_height))
+    resized_image = cv2.resize(image, (new_width, new_height))
 
-    #Step 2: Calculate padding and pad image
-    delta_w = target_width - new_width
-    delta_h = target_height - new_height
+    # Compute padding in absolute pixels
+    delta_w = target_size[0] - new_width
+    delta_h = target_size[1] - new_height
+    left, right = delta_w // 2, delta_w - (delta_w // 2)
+    top, bottom = delta_h // 2, delta_h - (delta_h // 2)
 
-    top = delta_h // 2 
-    bottom = target_height - (top + new_height)
-    left = delta_w//2
-    right = target_width - (left + new_width)
+    # Apply padding
+    final_image = cv2.copyMakeBorder(resized_image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
-    final_image = cv2.copyMakeBorder(resized_image, top, bottom, left, right, borderType = cv2.BORDER_CONSTANT,value=(0,0,0))
-    return final_image
+   #Shifts  in box position
+    shift_x = left 
+    shift_y = top 
+
+    return final_image, scale, scale, shift_x, shift_y  # Return absolute shifts
 
 
-def pad_then_resize(image, target_size=(224, 224)):
+def pad_then_resize(image, target_size, original_width, original_height):
     """
-    Pads an image to make it square, then resizes it to the specified target size.
-
-    This function first adds padding to the shorter side of the input image to make it square. 
-    The padding is applied equally on both sides (top/bottom or left/right), using a constant color (black by default). 
-    After padding, the square image is resized to the target dimensions.
-
-    Parameters:
-    ----------
-    image : np.ndarray
-        The input image in RGB or BGR format, represented as a NumPy array with shape (height, width, channels).
-    target_size : tuple, optional
-        The desired output size as (width, height). Default is (224, 224).
-
-    Returns:
-    -------
-    final_image : np.ndarray
-        The processed image, resized to the specified target size with padding applied if needed.
+    Pads an image to make it square, then resizes.
+    Returns the image, scaling factors, and padding shifts.
     """
-    original_height, original_width = image.shape[:2]
-
-    # Step 1: Calculate padding to make the image square
-    max_side = max(original_height, original_width)
-
+    max_side = max(original_width, original_height)
+    
+    # Compute padding in absolute pixels
     delta_w = max_side - original_width
     delta_h = max_side - original_height
+    left, right = delta_w // 2, delta_w - (delta_w // 2)
+    top, bottom = delta_h // 2, delta_h - (delta_h // 2)
 
-    top = delta_h // 2
-    bottom = delta_h - top
-    left = delta_w // 2
-    right = delta_w - left
-
-    padded_image = cv2.copyMakeBorder(
-        image, 
-        top, bottom, left, right, 
-        borderType=cv2.BORDER_CONSTANT, 
-        value=(0, 0, 0)  
-    )
-
-    # Step 2: Resize the padded image to the target size
+    # Apply padding before resizing
+    padded_image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 0, 0))
     final_image = cv2.resize(padded_image, target_size)
-    return final_image
+
+    # Compute scale factors
+    scale_x = target_size[0] / max_side
+    scale_y = target_size[1] / max_side
+
+    # Compute correct shifts in the new coordinate space
+    shift_x = left * scale_x
+    shift_y = top * scale_y
+
+    return final_image, scale_x, scale_y, shift_x, shift_y
 
 
-
-
-
+if __name__ == "__main__":
+    logging.info(resize_image_with_annotations(image_path="data/images/maksssksksss0.png",
+                                               xml_path="data/annotations/maksssksksss0.xml"))

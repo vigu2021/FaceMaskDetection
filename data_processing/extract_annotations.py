@@ -55,7 +55,7 @@ def extract_annotations(xml_file = "data/annotations/maksssksksss0.xml"):
     except Exception as e:
         logger.error(f"{xml_file}: Unexpected error occurred - {e}")
     
-    # Step 2: Extract bounding box position
+    # Step 2: Extract bounding box position and
     
     try:
         bounding_boxes = []
@@ -69,8 +69,6 @@ def extract_annotations(xml_file = "data/annotations/maksssksksss0.xml"):
             x_max = int(bounding_box.find('xmax').text)
             y_max = int(bounding_box.find('ymax').text)
             logger.info(f"Person {with_mask} and Bounding box at {x_min,y_min} to {x_max,y_max}")
-
-
             # Append bounding box data to the list
             bounding_boxes.append({
                 'label': with_mask,
@@ -92,7 +90,7 @@ def extract_annotations(xml_file = "data/annotations/maksssksksss0.xml"):
     except Exception as e:
         logger.error(f"{xml_file}: Unexpected error occurred - {e}")
 
-
+    
     # Debug log the final result
     logger.debug(f"Final Extracted Data: {result}") 
     return result

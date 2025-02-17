@@ -6,6 +6,45 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def convert_to_yolo_format(image_bbox):
+    """
+    Converts bounding box annotations to the YOLO format.
+
+    This function takes an image and its associated bounding box annotations,
+    then converts the bounding box coordinates into the YOLO format, which is:
+
+        class_id x_center y_center width height
+
+    where:
+        - `class_id` → Integer representing the class label (e.g., 1 = "with_mask", 0 = "without_mask").
+        - `x_center` → Normalized x-coordinate of the bounding box center (relative to image width).
+        - `y_center` → Normalized y-coordinate of the bounding box center (relative to image height).
+        - `width` → Normalized width of the bounding box.
+        - `height` → Normalized height of the bounding box.
+
+    Parameters
+    ----------
+    image_bbox : tuple
+        A tuple `(image_tensor, annotations)`, where:
+        - `image_tensor` → The resized image (not used in this function).
+        - `annotations` → A dictionary containing:
+            - `"image_size"`: Dictionary with `'width'` and `'height'` of the image.
+            - `"annotations"`: List of bounding box dictionaries, each with:
+                - `'label'`: The class label (e.g., "with_mask").
+                - `'coordinates'`: A dictionary with:
+                    - `'xmin'`: Minimum x-coordinate of the bounding box.
+                    - `'ymin'`: Minimum y-coordinate of the bounding box.
+                    - `'xmax'`: Maximum x-coordinate of the bounding box.
+                    - `'ymax'`: Maximum y-coordinate of the bounding box.
+
+    Returns
+    -------
+    list of str
+        A list of strings, where each entry represents an object annotation in YOLO format:
+        ```
+        "class_id x_center y_center width height"
+        ```
+        - The values are **normalized** between `0` and `1`, ensuring compatibility with YOLO.
+"""
     
     # Has to be lenght 2 and a tuple
     if len(image_bbox) != 2 or not isinstance(image_bbox,tuple):

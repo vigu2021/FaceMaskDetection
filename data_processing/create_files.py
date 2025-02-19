@@ -62,20 +62,21 @@ def create_files(method, image_dir='data/images', annotations_dir='data/annotati
         # Convert tensor to image and save as .jpg
         to_pil_image(new_image).save(image_save_path)
 
+        
         # Save YOLO annotations as .txt
         annotation_save_path = os.path.join(annotation_full_path, f"{image}.txt")
         with open(annotation_save_path, "w") as f:
             for line in yolo_list:
-                f.write(" ".join(map(str, line)) + "\n")
+                f.write(line + "\n") 
+        
 
 
         
-        
-
 
 if __name__ == "__main__":
-    create_files(method = 'resize_pad')
-    create_files(method = 'pad_resize')
+    create_files(method = 'resize',override = True)
+    create_files(method = 'resize_pad',override = True)
+    create_files(method = 'pad_resize',override = True)
 
 
 

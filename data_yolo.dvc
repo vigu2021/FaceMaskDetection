@@ -1,0 +1,6 @@
+outs:
+- md5: 1c0dc107e4cc30451f1acf7b5300da44.dir
+  size: 24849114
+  nfiles: 5118
+  hash: md5
+  path: data_yolo

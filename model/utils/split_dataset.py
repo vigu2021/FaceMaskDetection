@@ -1,7 +1,8 @@
 import os
-import shutil
 import random
 import logging
+import shutil
+
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 #Source files
 source_images_dir = 'data/images'
-source_annotations_dir = 'data/labels'
+source_annotations_dir = 'data/annotations'
 
 # Root directory
 output_base = 'data_yolo'
@@ -90,20 +91,86 @@ def validate_directory_and_return_files(directory_path, allowed_extensions=None)
 
 def split_data_set():
     logger.info("Starting data set split")
-    pass
+    
 
     for method in methods:
         method_image_dir = os.path.join(source_images_dir,method)
         method_label_dir = os.path.join(source_annotations_dir,method)
 
-        image_names = validate_directory_and_return_files(method_image_dir,allowed_extensions=('.txt',))
-        label_names = validate_directory_and_return_files(method_label_dir,allowed_extensions = ('.jpg','.png'))
+        # Validate and return all files found for images and labels 
+        image_names = validate_directory_and_return_files(method_image_dir,allowed_extensions=('.jpg','.png'))
+        label_names = validate_directory_and_return_files(method_label_dir,allowed_extensions=('.txt'))
 
+        no_images = len(image_names)
+        no_labels = len(label_names)
+
+        if no_images != no_labels:
+            logger.warning(f"⚠️ No. of images and labels aren't equal!: They are {no_images} images and {no_labels} labels")
+
+        #Shuffle image names
+        random.shuffle(image_names)
+        
+        train_count = int(train_ratio * no_images)
+        val_count = int(val_ratio * no_images )
+        test_count = no_images - train_count - val_count
+
+        #Create training,validation and testing sets
+        training_set = image_names[:train_count]
+        validation_set = image_names[train_count:train_count+val_count]
+        testing_set = image_names[train_count + val_count :]
+
+        logger.info(f"Training set: {len(training_set)} files, Validation set: {len(validation_set)} files, Testing set: {len(testing_set)}")
+        
+        dataset = {
+            'train': training_set,
+            'val': validation_set,
+            'test': testing_set
+        }      
+        target_image_dir = 'data_yolo/images'  
+        target_label_dir = 'data_yolo/labels'
+        for split_name,split_data in dataset.items():
+            for image_name in split_data:
+                image_file_name, extension = os.path.splitext(image_name)
+                
+                #Source image and label path
+                src_image_path = os.path.join(method_image_dir, image_name)
+                src_label_path = os.path.join(method_label_dir, image_file_name + '.txt')
+
+                #Target image and label path
+                target_image_path = os.path.join(target_image_dir,method,split_name,image_name)
+                target_label_path = os.path.join(target_label_dir,method,split_name,image_file_name + '.txt')
+                        
+                #Copy image
+                try:
+                    shutil.copyfile(src_image_path,target_image_path)
+                    logger.info(f"✅ Copied Image {src_image_path} → {target_image_path}")
+                except FileNotFoundError:
+                    logger.error(f"❌ Image not found: {src_image_path} → {target_image_path}")
+                except Exception as e:
+                    logger.error(f"❌ Error copying {src_image_path} due to {e}")
+                
+                #Copy label
+                try:
+                    shutil.copyfile(src_label_path,target_label_path)
+                    logger.info(f"Copied Image {src_label_path} → {target_label_path}")
+                except FileNotFoundError:
+                    logger.error(f"❌ Image not found: {src_label_path}")
+                
+                except Exception as e:
+                    logger.error(f"❌ Error copying {src_label_path} due to {e}")
+                
+
+        logger.info(f"✅ Dataset split completed!, find images at {target_image_dir} and labels at {target_label_dir}")
+
+                
+                
+            
+                
 
 
 
 if __name__ == "__main__":
-    print(len(validate_directory_and_return_files(os.path.join(source_images_dir,'resize'))))
+    split_data_set()
     
 
         

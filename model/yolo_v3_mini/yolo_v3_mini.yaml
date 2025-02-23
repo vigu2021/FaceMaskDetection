@@ -1,0 +1,9 @@
+#path for train,val,test
+train: data_yolo/images/resize/train
+val:   data_yolo/images/resize/val
+test:  data_yolo/images/resize/test
+
+
+nc: 2  #2 classes (With Mask, Without Mask)
+# Class names
+names: ['with_mask', 'without_mask']

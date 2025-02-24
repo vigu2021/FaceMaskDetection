@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/hp/Project-Portfolio/FaceMaskDetection/mlruns/781773159370822915/8145bd17ad724d1da1239f5d859c6083/artifacts
+end_time: 1740411636958
+entry_point_name: ''
+experiment_id: '781773159370822915'
+lifecycle_stage: active
+run_id: 8145bd17ad724d1da1239f5d859c6083
+run_name: Resize_pad_v2
+run_uuid: 8145bd17ad724d1da1239f5d859c6083
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740408132139
+status: 3
+tags: []
+user_id: hp

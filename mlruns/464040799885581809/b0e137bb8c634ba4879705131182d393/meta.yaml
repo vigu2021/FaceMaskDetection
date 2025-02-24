@@ -1,0 +1,16 @@
+artifact_uri: file:///C:/Users/hp/Project-Portfolio/FaceMaskDetection/mlruns/464040799885581809/b0e137bb8c634ba4879705131182d393/artifacts
+deleted_time: 1740407724984
+end_time: 1740373440657
+entry_point_name: ''
+experiment_id: '464040799885581809'
+lifecycle_stage: deleted
+run_id: b0e137bb8c634ba4879705131182d393
+run_name: Vigu
+run_uuid: b0e137bb8c634ba4879705131182d393
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740373410810
+status: 4
+tags: []
+user_id: hp

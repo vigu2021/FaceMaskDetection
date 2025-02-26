@@ -170,6 +170,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 /data_yolo
-/best.pt
-frontend.html
-package-lock.json
+best.pt

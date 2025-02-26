@@ -1,0 +1,13 @@
+numpy
+pandas
+opencv-python
+matplotlib
+seaborn
+fastapi
+uvicorn
+torch
+torchvision
+torchaudio
+mlflow
+dagshub
+ultralytics

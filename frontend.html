@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Mask Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        video, canvas {
+            border: 2px solid #333;
+            margin-top: 10px;
+            max-width: 100%;
+        }
+        button, input[type="file"] {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .detections {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #007BFF;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Real-time Mask Detection</h1>
+
+    <div class="container">
+        <input type="file" id="imageUpload" accept="image/*">
+        <button onclick="startWebcam()">Start Webcam</button>
+        <button onclick="stopWebcam()">Stop Webcam</button>
+        <video id="video" autoplay></video>
+        <canvas id="canvas"></canvas>
+        <p class="detections" id="detections"></p>
+    </div>
+
+    <script>
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        let stream = null;
+
+        document.getElementById("imageUpload").addEventListener("change", async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await fetch("/detect_mask", { method: "POST", body: formData });
+                const data = await response.json();
+                drawDetections(data.detections);
+            } catch (error) {
+                console.error("Error detecting mask:", error);
+            }
+        });
+
+        async function startWebcam() {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            detectLive();
+        }
+
+        function stopWebcam() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        async function detectLive() {
+            if (!stream) return;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append("file", blob, "frame.jpg");
+
+                try {
+                    const response = await fetch("/detect_mask", { method: "POST", body: formData });
+                    const data = await response.json();
+                    drawDetections(data.detections);
+                } catch (error) {
+                    console.error("Error detecting mask:", error);
+                }
+            }, "image/jpeg");
+
+            setTimeout(detectLive, 500);
+        }
+
+        function drawDetections(detections) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            detections.forEach(det => {
+                ctx.strokeStyle = det.label === "Mask" ? "green" : "red";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(det.bbox[0], det.bbox[1], det.bbox[2] - det.bbox[0], det.bbox[3] - det.bbox[1]);
+
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.font = "18px Arial";
+                ctx.fillText(`${det.label} (${(det.confidence * 100).toFixed(1)}%)`, det.bbox[0] + 5, det.bbox[1] - 5);
+            });
+
+            const results = detections.map(d => `${d.label} (${(d.confidence * 100).toFixed(1)}%)`).join("<br>");
+            document.getElementById("detections").innerHTML = results || "No detection";
+        }
+    </script>
+
+</body>
+</html>

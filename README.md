@@ -18,7 +18,7 @@ This is a FastAPI-based mask detection system that uses a deep learning model to
 
 ## 🔧 **Technologies Used**
 - 🐍 **FastAPI** - Backend framework for handling API requests
-- 🖼️ **YOLOv8** - Object detection model for face mask classification
+- 🖼️ **YOLOv3 mini** - Object detection model for face mask classification
 - 🎥 **OpenCV** - Capturing and processing video frames
 - 🚀 **Uvicorn** - Running the FastAPI server
 - 📦 **Docker** - Containerization for easy deployment  
@@ -26,7 +26,7 @@ This is a FastAPI-based mask detection system that uses a deep learning model to
 ## 🎯 **How It Works**
 1. **Upload an Image** 📤 or **Use Live Webcam** 🎥
 2. The **FastAPI backend** processes the image/video frame
-3. **YOLOv8 model** detects if a person is **wearing a mask** or **not**
+3. **YOLOv3 mini model** detects if a person is **wearing a mask** or **not**
 4. The bounding box and confidence score are displayed 🔲✅❌  
 
 ## 🛠 **Installation & Setup**

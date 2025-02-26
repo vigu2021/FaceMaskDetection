@@ -1,9 +1,6 @@
-#path for train,val,test
-train: data_yolo/images/resize/train
-val:   data_yolo/images/resize/val
-test:  data_yolo/images/resize/test
+train: C:/Users/hp/Project-Portfolio/FaceMaskDetection/data_yolo/images/resize_pad/train
+val: C:/Users/hp/Project-Portfolio/FaceMaskDetection/data_yolo/images/resize_pad/val
+test: C:/Users/hp/Project-Portfolio/FaceMaskDetection/data_yolo/images/resize_pad/test
 
-
-nc: 2  #2 classes (With Mask, Without Mask)
-# Class names
-names: ['with_mask', 'without_mask']
+nc: 2
+names: ['without_mask','with_mask']

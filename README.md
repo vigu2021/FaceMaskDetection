@@ -11,17 +11,16 @@ This is a FastAPI-based mask detection system that uses a deep learning model to
 
 
 ## 📌 **Features**
-✅ **Real-time mask detection** via webcam  
-✅ **Image upload support** for mask classification  
-✅ **Bounding boxes with labels** (Mask / No Mask)  
-✅ **Confidence scores displayed**  
+**Real-time mask detection** via webcam  
+**Image upload support** for mask classification  
+**Bounding boxes with labels** (Mask / No Mask)  
+**Confidence scores displayed**  
 
 ## 🔧 **Technologies Used**
-- 🐍 **FastAPI** - Backend framework for handling API requests
-- 🖼️ **YOLOv3 mini** - Object detection model for face mask classification
-- 🎥 **OpenCV** - Capturing and processing video frames
-- 🚀 **Uvicorn** - Running the FastAPI server
-- 📦 **Docker** - Containerization for easy deployment  
+ **FastAPI** - Backend framework for handling API requests
+ **YOLOv3 mini** - Object detection model for face mask classification
+ **OpenCV** - Capturing and processing video frames
+ **Docker** - Containerization for easy deployment  
 
 ## 🎯 **How It Works**
 1. **Upload an Image** 📤 or **Use Live Webcam** 🎥
